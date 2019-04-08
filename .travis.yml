@@ -1,0 +1,37 @@
+language: go
+
+go:
+- 1.11.x
+- master
+
+# Force-enable Go modules
+# TODO: configure this only for 1.11 when 1.12 releases
+env:
+- GO111MODULE=on
+
+matrix:
+  allow_failures:
+      - go: master
+  fast_finish: true
+
+# Only clone most recent commit
+git:
+  depth: 1
+
+before_install:
+  - go get golang.org/x/lint/golint
+
+# Disable email notifications for build results
+notifications:
+  email: false
+
+script:
+  - golint
+  - go vet ./...
+  - go test -v -race -mod=readonly -coverprofile=coverage.txt -covermode=atomic ./...
+  - go mod tidy
+  # Check for unused packages
+  - git diff --exit-code go.sum go.mod
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
